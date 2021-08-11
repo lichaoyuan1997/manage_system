@@ -222,7 +222,7 @@
             return this.$message.error('分配权限失败')
           this.$message({
             showClose: true,
-            message: "分配权限成功成功",
+            message: "分配权限成功",
             type: "success",
           });
           this.getRoleList()
