@@ -33,7 +33,7 @@
             <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeUserById(scope.row.id)">
             </el-button>
             <el-tooltip effect="dark" content="分配权限" placement="top">
-              <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
+              <el-button type="warning" icon="el-icon-setting" size="mini" @click="setRole(scope.row)"></el-button>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -78,6 +78,22 @@
       <span slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="editUserInfo">确 定</el-button>
+      </span>
+    </el-dialog>
+    <el-dialog title="分配角色" :visible.sync="setRoleDialogVisible" width="50%" @close="setRoleDialogClosed">
+      <div>
+        <p>当前的用户:{{userInfo.username}}</p>
+        <p>当前的角色:{{userInfo.role_name}}</p>
+        <p>分配新角色:
+          <el-select v-model="selectedRoleId" placeholder="请选择">
+            <el-option v-for="item in rolesList" :key="item.id" :label="item.roleName" :value="item.id">
+            </el-option>
+          </el-select>
+        </p>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="setRoleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="savaRoleInfo">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -188,7 +204,11 @@
               trigger: 'blur'
             }
           ]
-        }
+        },
+        setRoleDialogVisible: false,
+        userInfo: {},
+        rolesList: [],
+        selectedRoleId: ''
       };
     },
     created() {
@@ -317,6 +337,46 @@
             center: true
           });
         })
+      },
+      setRole(role) {
+        this.userInfo = role
+        request({
+          method: 'get',
+          url: '/roles'
+        }).then(res => {
+          if (res.data.meta.status !== 200)
+            this.$message.error('获取用户列表角色失败')
+          this.rolesList = res.data.data
+        })
+        this.setRoleDialogVisible = true;
+      },
+      savaRoleInfo() {
+        if (!this.selectedRoleId) {
+          return this.$message.error('请选择要分配的角色')
+        }
+        request({
+          method: 'post',
+          url: `/users/${this.userInfo.id}/role`,
+          data: {
+            rid:this.selectedRoleId
+          }
+        }).then(res => {
+          console.log(res)
+          if (res.data.meta.status !== 200) {
+            return this.$message.error('角色更新失败')
+          }
+          this.$message({
+            showClose: true,
+            message: "角色更新成功",
+            type: "success",
+          });
+          this.getUserList()
+        })
+        this.setRoleDialogVisible = false;
+      },
+      setRoleDialogClosed() {
+        this.userInfo = {}
+        this.selectedRoleId = ''
       }
     },
   };
